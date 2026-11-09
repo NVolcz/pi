@@ -1,4 +1,6 @@
 import { spawn } from "node:child_process";
+import { isAbsolute, sep } from "node:path";
+import { pathToFileURL } from "node:url";
 
 /**
  * Open a URL or file in the platform browser/default handler.
@@ -8,6 +10,11 @@ import { spawn } from "node:child_process";
  * `start` runs, which would make attacker-controlled URLs injectable.
  */
 export function openBrowser(target: string): void {
+	if (!isAbsolute(target) && !URL.canParse(target)) {
+		// The launcher uses / for WSL, so resolve relative links before handing them off.
+		target = new URL(target, pathToFileURL(`${process.cwd()}${sep}`)).href;
+	}
+
 	const [cmd, args]: [string, string[]] =
 		process.platform === "darwin"
 			? ["open", [target]]
